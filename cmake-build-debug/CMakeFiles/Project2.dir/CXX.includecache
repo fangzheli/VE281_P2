@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/tople/Desktop/VE281/Project2/hash_prime.hpp
+utility
+-
+
+C:/Users/tople/Desktop/VE281/Project2/hashtable.hpp
+hash_prime.hpp
+C:/Users/tople/Desktop/VE281/Project2/hash_prime.hpp
+exception
+-
+functional
+-
+vector
+-
+forward_list
+-
+cmath
+-
+
+C:/Users/tople/Desktop/VE281/Project2/main.cpp
+iostream
+-
+forward_list
+-
+hashtable.hpp
+C:/Users/tople/Desktop/VE281/Project2/hashtable.hpp
+
