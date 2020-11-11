@@ -173,6 +173,9 @@ protected:                                                                  // D
         while ((HashPrime::g_a_sizes[i]<bucketSize)&&(HashPrime::g_a_sizes[i]<=floor(tableSize/maxLoadFactor))){
             i++;
         }
+        if (i>=62){
+            throw std::range_error("no such bucket size can be found");
+        }
         return HashPrime::g_a_sizes[i];
     }
 
@@ -310,7 +313,7 @@ public:
         else{
 //            this->erase(it);
 //            insert(it,key, value);
-            *this[key] = value;
+            (*this)[key] = value;
             return false;
         }
     }
@@ -359,6 +362,7 @@ public:
     Iterator erase(const Iterator &it) {
         // TODO: implement this function
 //        if (it == end())//seem not important for it is always not end()
+        tableSize--;
         return it.bucketIt->erase_after(it.listItBefore);
     }
 
@@ -374,7 +378,11 @@ public:
     Value &operator[](const Key &key) {
         // TODO: implement this function
         auto it = find(key);
-        return &(*it->second);
+        if (it.endFlag){
+            insert(key,Value());
+            return Value();
+        }
+        return (it->second);
     }
 
     /**
@@ -390,6 +398,21 @@ public:
         bucketSize = findMinimumBucketSize(bucketSize);
         if (bucketSize == buckets.size()) return;
         // TODO: implement this function
+        HashTable origin_HashTable(*this);
+        this->buckets.clear();
+        tableSize = 0;
+        Iterator it(this);
+        for (it = origin_HashTable.firstBucketIt;it!= end();++it){
+            HashNode newNode(it->first,it->second);
+            typename HashTableData::iterator it_bucket = buckets.begin();
+            for (int i = 0;i<hashKey(it->first);i++){
+                it_bucket++;
+            }
+            it_bucket->insert_after(buckets[hashKey(it->first,bucketSize)].before_begin(),newNode);
+            tableSize++;
+            origin_HashTable.buckets[hashKey(it->first)];
+        }
+
     }
 
     /**
