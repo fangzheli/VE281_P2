@@ -266,6 +266,7 @@ public:
         }
         auto it_before = buckets[hashKey(key)].before_begin();
         bool flag = true;
+        //if this hash slot is empty
         if (buckets[hashKey(key)].empty()){
             auto it = Iterator(this, it_bucket,it_before);
             it.endFlag = flag;
@@ -275,9 +276,11 @@ public:
             if (it->first == key){
                 flag = false;
                 break;
+                //key is found
             }
             ++it_before;
         }
+        //hash slot is occupied but key is not found
         auto it = Iterator(this, it_bucket,it_before);
         it.endFlag = flag;
         return it;
@@ -302,10 +305,12 @@ public:
             if ((tableSize+1)/bucketSize()>maxLoadFactor){
                 rehash(bucketSize());
             }
-//            if (it.bucketIt.empty()){
-//                firstBucketIt.
-//            }
-//       maintain firstBucketIt
+            //maintain firstBucketIt
+            if (it.bucketIt->empty()){
+                if (hashKey(key)<hashKey((firstBucketIt->front()).first)){
+                    firstBucketIt = it.bucketIt;
+                }
+            }
             it.bucketIt->insert_after(it.listItBefore,newNode);
             tableSize++;
             return true;
@@ -361,9 +366,19 @@ public:
      */
     Iterator erase(const Iterator &it) {
         // TODO: implement this function
-//        if (it == end())//seem not important for it is always not end()
+        if (it == end()){
+            //seem not important for it is always not end()
+            return it;
+    }
+        Iterator temp= it.bucketIt->erase_after(it.listItBefore);
+        for (auto iter = firstBucketIt;iter!=buckets.end();iter++){
+            if (!iter->empty()){
+                firstBucketIt = iter;
+                break;
+            }
+        }
         tableSize--;
-        return it.bucketIt->erase_after(it.listItBefore);
+        return temp;
     }
 
     /**
@@ -379,8 +394,10 @@ public:
         // TODO: implement this function
         auto it = find(key);
         if (it.endFlag){
-            insert(key,Value());
-            return Value();
+            //danger of memory leak
+            auto value = new Value();
+            insert(key,*value);
+            return *value;
         }
         return (it->second);
     }
@@ -402,7 +419,8 @@ public:
         this->buckets.clear();
         tableSize = 0;
         Iterator it(this);
-        for (it = origin_HashTable.firstBucketIt;it!= end();++it){
+        Iterator first_element_it(this,origin_HashTable.firstBucketIt,origin_HashTable.firstBucketIt->before_begin());
+        for (it = first_element_it;it!= end();++it){
             HashNode newNode(it->first,it->second);
             typename HashTableData::iterator it_bucket = buckets.begin();
             for (int i = 0;i<hashKey(it->first);i++){
@@ -412,7 +430,13 @@ public:
             tableSize++;
             origin_HashTable.buckets[hashKey(it->first)];
         }
-
+        //maintain firstBucketIt
+        for (auto iter = buckets.begin();iter!=buckets.end();iter++){
+            if (!iter->empty()){
+                firstBucketIt = iter;
+                break;
+            }
+        }
     }
 
     /**
