@@ -114,7 +114,11 @@ public:
 
         HashNode *operator->() {
             auto listIt = listItBefore;
+            if ((bucketIt->empty())){
+                std::cout << "warning" << std::endl;
+            }
             ++listIt;
+            std::cout << "enter" << std::endl;
             return &(*listIt);
         }
 
@@ -169,11 +173,13 @@ protected:                                                                  // D
      */
     size_t findMinimumBucketSize(size_t bucketSize) const {
         // TODO: implement this function
+        std::cout << "in finding minimum" << std::endl;
         int i = 0;
-        while ((HashPrime::g_a_sizes[i]<bucketSize)&&(HashPrime::g_a_sizes[i]<=floor(tableSize/maxLoadFactor))){
+        while ((HashPrime::g_a_sizes[i] < bucketSize) ||
+               (HashPrime::g_a_sizes[i] <= floor((tableSize) / maxLoadFactor))) {
             i++;
         }
-        if (i>=62){
+        if (i >= 62) {
             throw std::range_error("no such bucket size can be found");
         }
         return HashPrime::g_a_sizes[i];
@@ -186,31 +192,32 @@ public:
     HashTable() :
             buckets(DEFAULT_BUCKET_SIZE), tableSize(0), maxLoadFactor(DEFAULT_LOAD_FACTOR),
             hash(Hash()), keyEqual(KeyEqual()) {
-        firstBucketIt = buckets.end();
+        firstBucketIt = buckets.begin();
     }
+    //change definition a little bit
 
     explicit HashTable(size_t bucketSize) :
             tableSize(0), maxLoadFactor(DEFAULT_LOAD_FACTOR),
             hash(Hash()), keyEqual(KeyEqual()) {
         bucketSize = findMinimumBucketSize(bucketSize);
         buckets.resize(bucketSize);
-        firstBucketIt = buckets.end();
+        firstBucketIt = buckets.begin();
     }
 
-    void copyFrom(const HashTable &that){
+    void copyFrom(const HashTable &that) {
         // Helper function for copy and assign constructor
-        if (&that!=this){
+        if (&that != this) {
             buckets.clear();
-            buckets.size() = that.bucketSize();
-            for (size_t i=0;i<that.bucketSize();i++){
+            for (size_t i = 0; i < that.bucketSize(); i++) {
                 buckets.push_back(that.buckets[i]);
             }
             hash = that.hash;
             keyEqual = that.keyEqual;
             maxLoadFactor = that.maxLoadFactor;
             tableSize = that.tableSize;
-            while((firstBucketIt!=buckets.end())&&(firstBucketIt->empty()))
-                ++firstBucketIt;
+//            while ((firstBucketIt != buckets.end()) && (firstBucketIt->empty()))
+//                ++firstBucketIt;
+            firstBucketIt = that.firstBucketIt;
         }
     }
 
@@ -260,30 +267,44 @@ public:
      */
     Iterator find(const Key &key) {
         // TODO: implement this function
+        std::cout << "I am FIND" << std::endl;
+        std::cout << hashKey(key) << std::endl;
         typename HashTableData::iterator it_bucket = buckets.begin();
-        for (int i = 0;i<hashKey(key);i++){
+        for (int i = 0; i < hashKey(key); i++) {
             it_bucket++;
         }
         auto it_before = buckets[hashKey(key)].before_begin();
         bool flag = true;
         //if this hash slot is empty
-        if (buckets[hashKey(key)].empty()){
-            auto it = Iterator(this, it_bucket,it_before);
+        bool temp_flag = buckets[hashKey(key)].empty();
+        std::cout << temp_flag << std::endl;
+        if (temp_flag) {
+            std::cout << "temp_flAG_ACTIVATE" << std::endl;
+            auto it = Iterator(this, it_bucket, it_before);
             it.endFlag = flag;
             return it;
         }
-        for (auto it = buckets[hashKey(key)].begin();it!=buckets[hashKey(key)].end();++it){
-            if (it->first == key){
+        auto it = buckets[hashKey(key)].begin();
+        auto it_next = ++it;
+        it = buckets[hashKey(key)].begin();
+        while (it_next != buckets[hashKey(key)].end()) {
+            //key is found
+            if (it->first == key) {
                 flag = false;
                 break;
-                //key is found
             }
-            ++it_before;
+            it++;
+            it_before++;
+            it_next++;
         }
+        if (it->first == key) {
+            flag = false;
+        }
+        std::cout << "hash slot is occupied but key is not found" << std::endl;
         //hash slot is occupied but key is not found
-        auto it = Iterator(this, it_bucket,it_before);
-        it.endFlag = flag;
-        return it;
+        auto it_temp = Iterator(this, it_bucket, it_before);
+        it_temp.endFlag = flag;
+        return it_temp;
     }
 
     /**
@@ -300,25 +321,33 @@ public:
      */
     bool insert(const Iterator &it, const Key &key, const Value &value) {
         // TODO: implement this function
-        HashNode newNode(key,value);
-        if (it.endFlag){
-            if ((tableSize+1)/bucketSize()>maxLoadFactor){
-                rehash(bucketSize());
-            }
+        std::cout << "I am in real insert" << std::endl;
+        HashNode newNode(key, value);
+        if (it.endFlag) {
             //maintain firstBucketIt
-            if (it.bucketIt->empty()){
-                if (hashKey(key)<hashKey((firstBucketIt->front()).first)){
+            if ((it.bucketIt)->empty()) {
+                if (firstBucketIt->empty()) {
                     firstBucketIt = it.bucketIt;
+                } else {
+                    if (hashKey(key) < hashKey((firstBucketIt->front()).first)) {
+                        firstBucketIt = it.bucketIt;
+                    }
                 }
             }
-            it.bucketIt->insert_after(it.listItBefore,newNode);
+            it.bucketIt->insert_after(it.listItBefore, newNode);
             tableSize++;
+            if (((float) tableSize) / bucketSize() > maxLoadFactor) {
+                std::cout << "before rehashing" << std::endl;
+                size_t current_size = buckets.size();
+                rehash(current_size);
+            }
             return true;
-        }
-        else{
-//            this->erase(it);
-//            insert(it,key, value);
-            (*this)[key] = value;
+        } else {
+            Iterator new_it(it);
+            this->erase(it);
+            new_it.bucketIt->insert_after(new_it.listItBefore, newNode);
+            tableSize++;
+//            (*this)[key] = value; this way will lead to cycle function;
             return false;
         }
     }
@@ -335,7 +364,10 @@ public:
      */
     bool insert(const Key &key, const Value &value) {
         // TODO: implement this function
-        return insert(find(key),key,value);
+        std::cout << "I am in insert" << std::endl;
+        auto it = find(key);
+        std::cout << "I am finished here" << std::endl;
+        return insert(it, key, value);
     }
 
     /**
@@ -349,7 +381,7 @@ public:
     bool erase(const Key &key) {
         // TODO: implement this function
         auto it = find(key);
-        if (!it.endFlag){
+        if (!it.endFlag) {
             erase(it);
             return true;
         }
@@ -366,19 +398,19 @@ public:
      */
     Iterator erase(const Iterator &it) {
         // TODO: implement this function
-        if (it == end()){
+        if (it == end()) {
             //seem not important for it is always not end()
             return it;
-    }
-        Iterator temp= it.bucketIt->erase_after(it.listItBefore);
-        for (auto iter = firstBucketIt;iter!=buckets.end();iter++){
-            if (!iter->empty()){
+        }
+        it.bucketIt->erase_after(it.listItBefore);
+        for (auto iter = firstBucketIt; iter != buckets.end(); iter++) {
+            if (!iter->empty()) {
                 firstBucketIt = iter;
                 break;
             }
         }
         tableSize--;
-        return temp;
+        return it;
     }
 
     /**
@@ -393,11 +425,9 @@ public:
     Value &operator[](const Key &key) {
         // TODO: implement this function
         auto it = find(key);
-        if (it.endFlag){
-            //danger of memory leak
-            auto value = new Value();
-            insert(key,*value);
-            return *value;
+        if (it.endFlag) {
+            insert(key, Value());
+            return (find(key)->second);
         }
         return (it->second);
     }
@@ -412,15 +442,19 @@ public:
      * @param bucketSize lower bound of the new number of buckets
      */
     void rehash(size_t bucketSize) {
+        std::cout << "in rehashing" << std::endl;
         bucketSize = findMinimumBucketSize(bucketSize);
+        std::cout << "BUCKETS GET" << std::endl;
         if (bucketSize == buckets.size()) return;
         // TODO: implement this function
         HashTable origin_HashTable(*this);
+        std::cout << "BUCKETS CLEAR" << std::endl;
         this->buckets.clear();
         tableSize = 0;
         Iterator it(this);
-        Iterator first_element_it(this,origin_HashTable.firstBucketIt,origin_HashTable.firstBucketIt->before_begin());
-        for (it = first_element_it;it!= end();++it){
+        Iterator first_element_it(this, origin_HashTable.firstBucketIt, origin_HashTable.firstBucketIt->before_begin());
+        std::cout << "before using -> explicitly" << std::endl;
+        for (it = first_element_it; it != end(); ++it) {
             HashNode newNode(it->first,it->second);
             typename HashTableData::iterator it_bucket = buckets.begin();
             for (int i = 0;i<hashKey(it->first);i++){
@@ -431,8 +465,8 @@ public:
             origin_HashTable.buckets[hashKey(it->first)];
         }
         //maintain firstBucketIt
-        for (auto iter = buckets.begin();iter!=buckets.end();iter++){
-            if (!iter->empty()){
+        for (auto iter = buckets.begin(); iter != buckets.end(); iter++) {
+            if (!iter->empty()) {
                 firstBucketIt = iter;
                 break;
             }
