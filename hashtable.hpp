@@ -176,7 +176,7 @@ protected:                                                                  // D
 //        std::cout << "in finding minimum" << std::endl;
         int i = 0;
         while ((HashPrime::g_a_sizes[i] < bucketSize) ||
-               (HashPrime::g_a_sizes[i] <= floor((tableSize) / maxLoadFactor))) {
+               (HashPrime::g_a_sizes[i] <= (size_t)(floor((double)(tableSize) / maxLoadFactor))) ){
             i++;
         }
         if (i >= 62) {
@@ -274,7 +274,7 @@ public:
 //        std::cout << "I am FIND" << std::endl;
 //        std::cout << hashKey(key) << std::endl;
         typename HashTableData::iterator it_bucket = buckets.begin();
-        for (int i = 0; i < hashKey(key); i++) {
+        for (unsigned int i = 0; i < hashKey(key); i++) {
             it_bucket++;
         }
         auto it_before = buckets[hashKey(key)].before_begin();
@@ -340,7 +340,7 @@ public:
             }
             it.bucketIt->insert_after(it.listItBefore, newNode);
             tableSize++;
-            if (((float) tableSize) / bucketSize() > maxLoadFactor) {
+            if ( ((double)(tableSize) / (double)bucketSize()) > maxLoadFactor) {
 //                std::cout << "before rehashing" << std::endl;
                 size_t current_size = buckets.size();
                 rehash(current_size);
@@ -431,6 +431,13 @@ public:
         auto it = find(key);
         if (it.endFlag) {
             insert(key, Value());
+            //maintain firstBucketIt
+            for (auto iter = buckets.begin(); iter != buckets.end(); iter++) {
+                if (!iter->empty()) {
+                    firstBucketIt = iter;
+                    break;
+                }
+            }
             return (find(key)->second);
         }
         return (it->second);
@@ -464,7 +471,7 @@ public:
         for (it = first_element_it; it != end(); ++it) {
             HashNode newNode(it->first,it->second);
             typename HashTableData::iterator it_bucket = buckets.begin();
-            for (int i = 0;i<hashKey(it->first,bucketSize);i++){
+            for (unsigned int i = 0;i<hashKey(it->first,bucketSize);i++){
                 it_bucket++;
             }
             it_bucket->insert_after(buckets[hashKey(it->first,bucketSize)].before_begin(),newNode);

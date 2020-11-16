@@ -1,3 +1,3 @@
-C:/Users/tople/Desktop/VE281/P2/cmake-build-debug/CMakeFiles/Project2.dir
-C:/Users/tople/Desktop/VE281/P2/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/tople/Desktop/VE281/P2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/fangzhe_li/CLionProjects/VE281_P2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/fangzhe_li/CLionProjects/VE281_P2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/fangzhe_li/CLionProjects/VE281_P2/cmake-build-debug/CMakeFiles/Project2.dir
